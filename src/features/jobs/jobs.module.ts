@@ -25,20 +25,13 @@ const QueryHandlers = [GetJobsHandler, GetJobByIdHandler];
 const CommandHandlers = [CreateJobHandler, SeedJobsHandler];
 
 /**
- * ✅ FIX: NODE_ENV evaluado a nivel de módulo se ejecuta ANTES de que
- * ConfigModule cargue el .env, por lo que siempre era undefined/false.
+ * ✅ FIX: JobsSeederController siempre se registra.
+ * La protección se hace en runtime con guardDev() dentro de cada endpoint.
  *
- * Solución: NODE_ENV debe venir del sistema operativo / script de arranque,
- * no del archivo .env. Ver package.json:
- *   "start:dev": "NODE_ENV=development nest start --watch"
- *
- * Como el .env.development ya tiene NODE_ENV=development, el check aquí
- * funciona correctamente SOLO si el script lo inyecta antes de que Node arranque.
- *
- * Para mayor robustez, SeedJobsHandler siempre se registra como provider
- * (es necesario para que el CommandBus lo encuentre en desarrollo),
- * y el controlador seeder se registra siempre pero está protegido
- * por el guard interno de JobsSeederController que valida NODE_ENV en runtime.
+ * Razón: process.env.NODE_ENV leído a nivel de módulo puede evaluarse
+ * antes de que el entorno esté completamente cargado. Además, lanzar
+ * excepciones en el constructor de un controlador crashea el proceso
+ * completo de NestJS (no se puede recuperar en el arranque).
  */
 @Module({
   imports: [
@@ -47,10 +40,7 @@ const CommandHandlers = [CreateJobHandler, SeedJobsHandler];
   ],
   controllers: [
     JobsController,
-    // ✅ Siempre registrado: el guard interno de JobsSeederController
-    // bloquea cualquier request si NODE_ENV !== 'development' en runtime.
-    // Esto evita el problema de evaluar process.env antes del bootstrap.
-    JobsSeederController,
+    JobsSeederController, // protegido por guardDev() en cada método
   ],
   providers: [
     // CQRS handlers

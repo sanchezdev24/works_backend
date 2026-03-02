@@ -18,8 +18,10 @@ import { JobOrmEntity } from '../../persistence/orm-entities/job.orm-entity';
  * DEV-ONLY Controller.
  * Accessible at: POST /dev/seed/jobs
  *
- * Protected by a guard that blocks any non-development environment.
- * This controller is NOT registered in production.
+ * Protegido por guardDev() en cada endpoint.
+ * ✅ FIX: El constructor ya NO lanza excepciones — NestJS no puede
+ * manejar excepciones lanzadas durante la instanciación y crashea el proceso.
+ * La protección se hace en runtime dentro de cada método.
  */
 @ApiTags('🛠 Dev Tools (development only)')
 @Controller('dev')
@@ -28,16 +30,10 @@ export class JobsSeederController {
     private readonly commandBus: CommandBus,
     @InjectRepository(JobOrmEntity)
     private readonly ormRepo: Repository<JobOrmEntity>,
-  ) {
-    // Double-safety: if somehow instantiated in prod, throw on construction
-    if (process.env.NODE_ENV === 'production') {
-      throw new ForbiddenException('Dev endpoints are disabled in production');
-    }
-  }
+  ) {}
 
   /**
    * POST /dev/seed/jobs?count=20
-   * Seeds the database with sample job data.
    */
   @Post('seed/jobs')
   @HttpCode(HttpStatus.CREATED)
@@ -65,7 +61,6 @@ export class JobsSeederController {
 
   /**
    * DELETE /dev/reset/jobs
-   * Wipes all jobs from the database.
    */
   @Delete('reset/jobs')
   @HttpCode(HttpStatus.OK)
