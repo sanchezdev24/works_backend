@@ -10,6 +10,8 @@ import { Job } from '../../../domain/entities/job.entity';
 import { JobRepository, JobFilters } from '../../../domain/repositories/job.repository';
 import { JobOrmEntity } from '../orm-entities/job.orm-entity';
 import { JobMapper } from '../mappers/job.mapper';
+// ✅ FIX: importar el enum en lugar de usar 'active' as any
+import { JobStatusEnum } from '../../../domain/value-objects/job-status.value-object';
 
 /**
  * Infrastructure implementation of the domain's JobRepository contract.
@@ -69,7 +71,8 @@ export class TypeOrmJobRepository implements JobRepository {
   }
 
   async countActive(): Promise<number> {
-    return this.ormRepo.count({ where: { status: 'active' as any } });
+    // ✅ FIX: usar JobStatusEnum.ACTIVE en lugar de 'active' as any
+    return this.ormRepo.count({ where: { status: JobStatusEnum.ACTIVE } });
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────────

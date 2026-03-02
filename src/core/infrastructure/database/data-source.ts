@@ -7,7 +7,10 @@ import 'tsconfig-paths/register';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 
+// ✅ FIX: Cargar .env.development primero, con fallback a .env
+// dotenv no sobreescribe variables ya definidas, por eso el orden importa
 dotenv.config({ path: '.env.development' });
+dotenv.config({ path: '.env' });
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

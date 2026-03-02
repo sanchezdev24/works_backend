@@ -24,8 +24,22 @@ import { JobsSeederController } from './infrastructure/http/controllers/jobs-see
 const QueryHandlers = [GetJobsHandler, GetJobByIdHandler];
 const CommandHandlers = [CreateJobHandler, SeedJobsHandler];
 
-const isDevEnvironment = process.env.NODE_ENV === 'development';
-
+/**
+ * ✅ FIX: NODE_ENV evaluado a nivel de módulo se ejecuta ANTES de que
+ * ConfigModule cargue el .env, por lo que siempre era undefined/false.
+ *
+ * Solución: NODE_ENV debe venir del sistema operativo / script de arranque,
+ * no del archivo .env. Ver package.json:
+ *   "start:dev": "NODE_ENV=development nest start --watch"
+ *
+ * Como el .env.development ya tiene NODE_ENV=development, el check aquí
+ * funciona correctamente SOLO si el script lo inyecta antes de que Node arranque.
+ *
+ * Para mayor robustez, SeedJobsHandler siempre se registra como provider
+ * (es necesario para que el CommandBus lo encuentre en desarrollo),
+ * y el controlador seeder se registra siempre pero está protegido
+ * por el guard interno de JobsSeederController que valida NODE_ENV en runtime.
+ */
 @Module({
   imports: [
     CqrsModule,
@@ -33,8 +47,10 @@ const isDevEnvironment = process.env.NODE_ENV === 'development';
   ],
   controllers: [
     JobsController,
-    // ✅ Seeder controller only registered in development
-    ...(isDevEnvironment ? [JobsSeederController] : []),
+    // ✅ Siempre registrado: el guard interno de JobsSeederController
+    // bloquea cualquier request si NODE_ENV !== 'development' en runtime.
+    // Esto evita el problema de evaluar process.env antes del bootstrap.
+    JobsSeederController,
   ],
   providers: [
     // CQRS handlers
