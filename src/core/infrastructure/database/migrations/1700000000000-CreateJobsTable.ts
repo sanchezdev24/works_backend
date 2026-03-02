@@ -4,6 +4,10 @@ export class CreateJobsTable1700000000000 implements MigrationInterface {
   name = 'CreateJobsTable1700000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // ✅ FIX: Habilitar extensión ANTES de crear la tabla
+    // uuid_generate_v4() se usa como default en la columna id
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+
     // Create ENUMs
     await queryRunner.query(`
       CREATE TYPE "job_type_enum" AS ENUM (
@@ -145,9 +149,6 @@ export class CreateJobsTable1700000000000 implements MigrationInterface {
       }),
       true,
     );
-
-    // Enable uuid-ossp extension
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
 
     // Indexes
     await queryRunner.createIndex(
